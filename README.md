@@ -7,27 +7,25 @@ Are you tired of looking up the DART times on your phone? Do you get stuck worki
 
 Never miss your train again! The `DART_Cursor.ahk` script uses the genuine, bonafide, electrified, Irish Rail API to put your train times directly on your screen! 
 
-`DART_Cursor.ahk` is an AutoHotkey v2 script that uses the Irish Rail API to provide visual train arrival notifications by changing your cursor color. 
+`DART_Cursor.ahk` is an AutoHotkey v2 script that uses the Irish Rail API to provide visual train arrival notifications.
 
 </div>
 
 *Inspired by [ivan-the-terrible's bloodsugar-cursor](https://github.com/ivan-the-terrible/bloodsugar-cursor) using the same methods and cursor library.*
 
-## How It Works
+## How's It Work?
 
-This script helps Dublin commuters know when to leave their desk to catch their train without constantly checking timetables. It provides an always-visible cue by changing the cursor color based on train arrival times.
-
-| Status | Cursor | Meaning |
-|--------|---------|---------|
-| **Green** | ![image](https://github.com/user-attachments/assets/0d4e52aa-705a-4e59-afb6-5bd1fe9648c8) | Plenty of time to catch your train |
-| **Yellow** | ![image](https://github.com/user-attachments/assets/a47af124-a86a-40e4-8962-9e6e27298c1c) | Getting close - you should leave soon |
-| **Red** | ![image](https://github.com/user-attachments/assets/49026965-10dc-441a-bb4d-0547756dae46) | Too late for this train, showing next one |
-
-The script updates every minute via the [Irish Rail API](https://api.irishrail.ie/realtime/) and shows a tooltip with current station info and next train details:
+This script helps Dublin commuters know when to leave their desk to catch their train without constantly checking timetables. Every minute via the [Irish Rail API](https://api.irishrail.ie/realtime/) it provides a visual cue to indicate train arrival times at your train station by changing the colour of your cursor and generating a short lived tooltip with the next train's details. 
 
 ![Dart_Cursor_API_Update](https://github.com/user-attachments/assets/f3ae050a-828a-4461-85b3-474f06cf4064)
 
-*Note: The cursor only changes during your configured active hours, so you're not always looking at a colored cursor.*
+| Status | Cursor | Meaning |
+|--------|---------|---------|
+| ***Green*** | ![image](https://github.com/user-attachments/assets/0d4e52aa-705a-4e59-afb6-5bd1fe9648c8) | **Relax!** Plenty of time to catch your train - no rush needed |
+| ***Yellow*** | ![image](https://github.com/user-attachments/assets/a47af124-a86a-40e4-8962-9e6e27298c1c) | **Time to go!** Your train arrives in 7-10 minutes - if it takes you that long to reach the station, leave now! |
+| ***Red*** | ![image](https://github.com/user-attachments/assets/49026965-10dc-441a-bb4d-0547756dae46) | **Too late!** This train arrives in less than your travel time to the station - we'll show the next available train instead |
+
+> ***Note***: All timing thresholds are fully customizable in the settings - adjust them to match your actual travel time to the station!
 
 ## Key Features
 
@@ -56,16 +54,24 @@ The script updates every minute via the [Irish Rail API](https://api.irishrail.i
 ## Customization Options
 ### Station & Direction
 Configure your preferred station and travel direction:
+- Pick a station
+- & a direction! 
 
 ![image](https://github.com/user-attachments/assets/a3cfca46-e041-4126-822b-e57bbb070b84)
 
 ### Timing Thresholds
 Set when cursor colors change based on train arrival times:
+- This is entirely customisable by the user.
+- Set the thresholds to suit you!
+   - Minimum Catchable Time indicates the latest you think you can leave (if a train arrives in less time that this, the cursor turns red)
+   - Yellow Warning Threshold indicates if you leave now you'll arrive just before your train does.
+   - Red Display Time indicates how long to show the red cursor before moving on to the next train headed your direction! 
 
 ![image](https://github.com/user-attachments/assets/4072a7a4-7d95-4e64-b578-b3306b4aab5e)
 
 ### Active Schedule
 Define when the script monitors train times:
+> ***Note***: The cursor only changes during your configured active hours, so you're not always looking at a colored cursor.*
 
 ![image](https://github.com/user-attachments/assets/b49da87b-8e66-42ca-a8b1-fb638bc1d5d9)
 
