@@ -54,10 +54,13 @@ This script helps Dublin commuters know when to leave their desk to catch their 
 ## Customization Options
 ### Station & Direction
 Configure your preferred station and travel direction:
-- Pick a station
-- & a direction! 
+- Pick a station a direction! 
 
-![image](https://github.com/user-attachments/assets/a3cfca46-e041-4126-822b-e57bbb070b84)
+#### Enable Work Mode
+- Toggle the API to check on your home station or work station. 
+
+![image](https://github.com/user-attachments/assets/a517f38f-6ec1-4263-8580-978f834ad09f)
+
 
 ### Timing Thresholds
 Set when cursor colors change based on train arrival times:
