@@ -28,8 +28,8 @@ The script runs in the background, but the mouse cursor only changes during the 
 
 - **API Integration**: Makes minute-by-minute API calls to the Irish Rail API to retrieve real-time train arrival data 
 
-API Website & Documentation
->>>>> https://api.irishrail.ie/realtime/ <<<<<
+## API Website & Documentation
+https://api.irishrail.ie/realtime/
 
 - **Color-Coded System Cursors**: The cursor changes color to indicate train arrival status:
 
@@ -66,11 +66,20 @@ This script changes all system cursor images based on the train arrival time. It
 ## Customization
 You can customize:
 - Your station and direction preference
+
+# Station Selection
+![image](https://github.com/user-attachments/assets/a3cfca46-e041-4126-822b-e57bbb070b84)
+
 - Time thresholds for cursor color changes:
   - Minimum catchable time (when cursor turns red)
   - Yellow warning threshold
   - Red display duration before moving to next train
+# Timing Settings
+![image](https://github.com/user-attachments/assets/4072a7a4-7d95-4e64-b578-b3306b4aab5e)
+
 - Active hours during which the script will monitor train times
+# Schedule Settings
+![image](https://github.com/user-attachments/assets/b49da87b-8e66-42ca-a8b1-fb638bc1d5d9)
 
 ## Credits
 
