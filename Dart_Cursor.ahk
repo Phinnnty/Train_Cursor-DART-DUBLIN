@@ -5,8 +5,8 @@
 ; Dart Cursor - Train Arrival Notification via Cursor Color
 ; ============================
 ; Inspired by and uses resources from https://github.com/ivan-the-terrible/bloodsugar-cursor
-; Made by Fintan M for Murex (lol I'm moving to Canada so I wont be using it)
-
+; Made by Fintan M for  Dubliners (lol I'm moving to Canada so I wont be using it)
+;
 ; Set the DART icon in the system tray
 TraySetIcon(A_ScriptDir "\Dart.png")
 
@@ -24,6 +24,13 @@ global yellowThreshold := 10      ; Absolute minutes threshold for yellow warnin
 global redDisplayTime := 60000    ; How long to show red cursor before moving to next train (ms)
 global startTime := "1710"        ; Default start time (5:10 PM in 24hr format)
 global endTime := "1745"          ; Default end time (5:45 PM in 24hr format)
+
+global workModeEnabled := false   ; Master switch: enables/disables the entire Work/Home mode system
+global isWorkMode := false        ; Current active mode: false = Home mode, true = Work mode
+global homeStation := "Lansdowne Road"  ; Station to monitor when in Home mode (commuting from work to home)
+global workStation := "Pearse"    ; Station to monitor when in Work mode (commuting from home to work)
+global homeDirection := "Northbound"    ; Train direction for Home mode (typically toward residential areas)
+global workDirection := "Southbound"    ; Train direction for Work mode (typically toward city center)
 
 ; Map of all DART stations with user-friendly names and API names
 global stations := Map(
@@ -122,10 +129,39 @@ SortArray(arr) {
     return sorted
 }
 
+; Helper function to sort an array alphabetically
+SortArray(arr) {
+    ; Create a new sorted array
+    sorted := []
+    
+    ; Copy original array values
+    for index, value in arr {
+        sorted.Push(value)
+    }
+    
+    ; Simple bubble sort
+    n := sorted.Length
+    Loop n {
+        i := A_Index
+        Loop (n - i) {
+            j := A_Index
+            ; Use StrCompare for string comparison instead of > operator
+            if (StrCompare(sorted[j], sorted[j + 1]) > 0) {
+                temp := sorted[j]
+                sorted[j] := sorted[j + 1]
+                sorted[j + 1] := temp
+            }
+        }
+    }
+    
+    return sorted
+}
+
 ; Function to initialize the script
 InitializeScript() {
     global configFile, logFile, preferredDirection, currentStation, minCatchableTime
     global yellowThreshold, redDisplayTime, startTime, endTime, isActive, checkFrequency
+    global workModeEnabled, isWorkMode, homeStation, workStation, homeDirection, workDirection
     
     ; Create or clear log file safely
     if (FileExist(logFile)) {
@@ -165,12 +201,27 @@ InitializeScript() {
         yellowThreshold := Integer(IniRead(configFile, "Settings", "YellowThreshold", "5"))
         redDisplayTime := Integer(IniRead(configFile, "Settings", "RedDisplayTime", "60")) * 1000
         checkFrequency := Integer(IniRead(configFile, "Settings", "CheckFrequency", "60")) * 1000
-        
-        ; Load start and end times
+          ; Load start and end times
         startTime := IniRead(configFile, "Settings", "StartTime", "1710")
         endTime := IniRead(configFile, "Settings", "EndTime", "1745")
-          LogMessage("Loaded time thresholds - Min catchable: " . minCatchableTime . ", Yellow threshold: " . yellowThreshold . ", Red display time: " . (redDisplayTime/1000) . "s, Check frequency: " . (checkFrequency/1000) . "s")
+        
+        LogMessage("Loaded time thresholds - Min catchable: " . minCatchableTime . ", Yellow threshold: " . yellowThreshold . ", Red display time: " . (redDisplayTime/1000) . "s, Check frequency: " . (checkFrequency/1000) . "s")
         LogMessage("Loaded operational times - Start: " . FormatHHMM(startTime) . ", End: " . FormatHHMM(endTime))
+          ; Load Work/Home mode settings with defaults
+        workModeEnabled := IniRead(configFile, "Settings", "WorkModeEnabled", "false") = "true"
+        isWorkMode := IniRead(configFile, "Settings", "IsWorkMode", "false") = "true"
+        homeStation := IniRead(configFile, "Settings", "HomeStation", "Lansdowne Road")
+        workStation := IniRead(configFile, "Settings", "WorkStation", "Pearse")
+        homeDirection := IniRead(configFile, "Settings", "HomeDirection", "Northbound")
+        workDirection := IniRead(configFile, "Settings", "WorkDirection", "Southbound")
+        
+        LogMessage("Loaded Work/Home mode settings - Enabled: " . (workModeEnabled ? "true" : "false") . ", Current mode: " . (isWorkMode ? "Work" : "Home"))
+        
+        ; Apply current Work/Home mode to active monitoring variables
+        if (workModeEnabled) {
+            UpdateStationForMode()
+            LogMessage("Work/Home mode enabled - Current mode: " . (isWorkMode ? "Work" : "Home") . " - Station: " . currentStation)
+        }
           ; Check if configuration is missing any essential values
         if (!IsConfigurationComplete()) {
             LogMessage("Configuration is incomplete - prompting for setup")
@@ -179,18 +230,12 @@ InitializeScript() {
             ; Open settings GUI directly instead of prompting for direction
             LogMessage("No direction selected - opening settings GUI")
             OpenSettingsGUI()
-        }
-    } else {
+        }    } else {
         LogMessage("No configuration file found - First run detected")
         ; Show welcome message and prompt for initial setup
         ShowFirstRunWelcome()
-    }    ; Set up simplified tray menu
-    A_TrayMenu.Add("Check Train Times Now", CheckNow)
-    A_TrayMenu.Add() ; Separator
-    A_TrayMenu.Add("Open Settings", OpenSettingsGUI)
-    A_TrayMenu.Add("Restore Default Cursors", RestoreDefaultCursors)
-    A_TrayMenu.Add()  ; Separator
-    A_TrayMenu.Default := "Open Settings"
+    }    ; Set up tray menu
+    InitializeTrayMenu()
     LogMessage("Tray menu initialized")
     
     ; Set up a periodic safety check to ensure cursors are restored when inactive
@@ -200,7 +245,7 @@ InitializeScript() {
     CheckStartTime()
 }
 
-; Function to show first-run welcome and setup
+; Function to show first-run welcome and setup wizard
 ShowFirstRunWelcome() {
     global
     
@@ -229,6 +274,7 @@ FormatHHMM(timeString) {
 ; Function to save configuration to a file
 SaveConfig() {
     global preferredDirection, currentStation, minCatchableTime, yellowThreshold, redDisplayTime, startTime, endTime, checkFrequency
+    global workModeEnabled, isWorkMode, homeStation, workStation, homeDirection, workDirection
     IniWrite(preferredDirection, configFile, "Settings", "Direction")
     IniWrite(currentStation, configFile, "Settings", "Station")
     IniWrite(minCatchableTime, configFile, "Settings", "MinCatchableTime")
@@ -236,7 +282,15 @@ SaveConfig() {
     IniWrite(redDisplayTime/1000, configFile, "Settings", "RedDisplayTime") ; Store in seconds
     IniWrite(checkFrequency/1000, configFile, "Settings", "CheckFrequency") ; Store in seconds
     IniWrite(startTime, configFile, "Settings", "StartTime")
-    IniWrite(endTime, configFile, "Settings", "EndTime")
+    IniWrite(endTime, configFile, "Settings", "EndTime")    ; Save Work/Home mode settings (convert booleans to strings explicitly)
+    IniWrite(workModeEnabled ? "true" : "false", configFile, "Settings", "WorkModeEnabled")
+    IniWrite(isWorkMode ? "true" : "false", configFile, "Settings", "IsWorkMode")
+    IniWrite(homeStation, configFile, "Settings", "HomeStation")
+    IniWrite(workStation, configFile, "Settings", "WorkStation")
+    IniWrite(homeDirection, configFile, "Settings", "HomeDirection")
+    IniWrite(workDirection, configFile, "Settings", "WorkDirection")
+    
+    LogMessage("Saved Work/Home mode settings - Enabled: " . (workModeEnabled ? "true" : "false") . ", Current mode: " . (isWorkMode ? "Work" : "Home"))
 }
 
 ; Function to allow changing direction from tray menu
@@ -986,7 +1040,7 @@ OpenSettingsGUI(*) {
     global stationNames
     
     ; Create GUI
-    settingsGui := Gui("+AlwaysOnTop +Resize", "DART Cursor Settings")
+    settingsGui := Gui("", "DART Cursor Settings")
     settingsGui.MarginX := 15
     settingsGui.MarginY := 15
     
@@ -1080,10 +1134,47 @@ OpenSettingsGUI(*) {
     else if (preferredDirection = "Southbound")
         directionDropdown.Value := 3
     else
-        directionDropdown.Value := 1
-        
-    ; Add explanation 
-    settingsGui.AddText("xm+10 y+15 w480", "Select your home DART station and the direction you typically travel.`n`nThe script will monitor trains at this station and adjust your cursor color accordingly.")
+        directionDropdown.Value := 1    ; Add explanation 
+    settingsGui.AddText("xm+10 y+10 w480", "Select your DART station and the direction you typically travel.")
+    
+    ; Work/Home Mode Section
+    settingsGui.AddText("xm+10 y+15 w480 cBlue", "Work/Home Quick Switch:")
+    workModeCheck := settingsGui.AddCheckbox("xm+10 y+5 w350 Checked" . (workModeEnabled ? "1" : "0"), "Enable Work/Home Mode (quick station switching)")
+    
+    ; Home station selection
+    settingsGui.AddText("xm+10 y+10 w100", "Home Station:")
+    homeStationDropdown := settingsGui.AddDropDownList("w180 x+5 yp-3", stationNames)
+    settingsGui.AddText("x+5 yp+3 w60", "Direction:")
+    homeDirectionDropdown := settingsGui.AddDropDownList("w70 x+5 yp-3", ["North", "South"])
+    
+    ; Work station selection  
+    settingsGui.AddText("xm+10 y+10 w100", "Work Station:")
+    workStationDropdown := settingsGui.AddDropDownList("w180 x+5 yp-3", stationNames)
+    settingsGui.AddText("x+5 yp+3 w60", "Direction:")
+    workDirectionDropdown := settingsGui.AddDropDownList("w70 x+5 yp-3", ["North", "South"])
+    
+    ; Set current stations in dropdowns
+    for i, stationName in stationNames {
+        if (SubStr(stationName, 1, 3) = "---")
+            continue
+        if (stations.Has(stationName) && stations[stationName] = homeStation) {
+            homeStationDropdown.Value := i
+        }
+        if (stations.Has(stationName) && stations[stationName] = workStation) {
+            workStationDropdown.Value := i
+        }
+    }
+    
+    ; Set directions
+    homeDirectionDropdown.Value := (homeDirection = "Southbound") ? 2 : 1
+    workDirectionDropdown.Value := (workDirection = "Southbound") ? 2 : 1
+    
+    ; Current mode display
+    if (workModeEnabled) {
+        currentModeText := settingsGui.AddText("xm+10 y+15 w480 cRed", "Current Mode: " . (isWorkMode ? "WORK" : "HOME") . " - Use tray menu to switch")
+    } else {
+        settingsGui.AddText("xm+10 y+15 w480", "Enable Work/Home mode to quickly switch between two preset stations via tray menu.")
+    }
     
     ; ======= Timing Tab =========
     tabs.UseTab(2)
@@ -1145,7 +1236,8 @@ OpenSettingsGUI(*) {
     settingsGui.AddText("xm+10 y+15 w480 cBlue", "Examples:")
     settingsGui.AddText("xm+10 y+5 w480", "• For evening commute: Start 17:00, End 18:30")
     settingsGui.AddText("xm+10 y+5 w480", "• For morning commute: Start 07:30, End 09:00")
-      ; ======= About Tab =========
+    
+    ; ======= About Tab =========
     tabs.UseTab(4)
     
     settingsGui.AddText("xm+10 y+25 w480", "DART Cursor - Visual Train Time Notification System")
@@ -1172,12 +1264,13 @@ OpenSettingsGUI(*) {
     
     ; Set event handlers for buttons
     saveButton.OnEvent("Click", (*) => SaveSettingsFunction())
-    cancelButton.OnEvent("Click", (*) => (TrayTip("DART Cursor", "Settings not saved", 3), settingsGui.Destroy()))
-      ; Save settings function - separated from event handler
+    cancelButton.OnEvent("Click", (*) => (TrayTip("DART Cursor", "Settings not saved", 3), settingsGui.Destroy()))    ; Save settings function - separated from event handler
+  
     SaveSettingsFunction() {
         ; Access global variables that will be modified
         global stationNames, currentStation, preferredDirection, minCatchableTime
         global yellowThreshold, redDisplayTime, checkFrequency, startTime, endTime, isActive
+        global workModeEnabled, isWorkMode, homeStation, workStation, homeDirection, workDirection
         
         ; Validate inputs
         validationError := ""
@@ -1245,14 +1338,46 @@ OpenSettingsGUI(*) {
         minCatchableTime := newMinCatchable
         yellowThreshold := newYellowThreshold
         redDisplayTime := newRedDisplay * 1000
-        checkFrequency := newCheckFrequency * 1000
-        
-        ; Schedule times
+        checkFrequency := newCheckFrequency * 1000        ; Schedule times
         startTime := Format("{:02d}{:02d}", startHour, startMin)
         endTime := Format("{:02d}{:02d}", endHour, endMin)
         
-        ; Save to config file
-        SaveConfig()        ; Remember the old active hours to check if they changed
+        ; Work/Home mode settings
+        workModeEnabled := workModeCheck.Value
+        
+        ; Get selected stations and directions (only if Work/Home mode is enabled)
+        if (workModeEnabled) {
+            ; Get home station - validate dropdown selection and exclude section headers
+            homeStationIndex := homeStationDropdown.Value
+            if (homeStationIndex && homeStationIndex <= stationNames.Length) {
+                homeStationName := stationNames[homeStationIndex]
+                if (SubStr(homeStationName, 1, 3) != "---" && stations.Has(homeStationName)) {
+                    homeStation := stations[homeStationName]
+                }
+            }
+            
+            ; Get work station - validate dropdown selection and exclude section headers
+            workStationIndex := workStationDropdown.Value
+            if (workStationIndex && workStationIndex <= stationNames.Length) {
+                workStationName := stationNames[workStationIndex]
+                if (SubStr(workStationName, 1, 3) != "---" && stations.Has(workStationName)) {
+                    workStation := stations[workStationName]
+                }
+            }
+            
+            ; Get directions - convert dropdown indices to direction strings
+            homeDirection := (homeDirectionDropdown.Value = 2) ? "Southbound" : "Northbound"
+            workDirection := (workDirectionDropdown.Value = 2) ? "Southbound" : "Northbound"
+              ; Apply current mode settings to active monitoring variables
+            UpdateStationForMode()
+        }
+          ; Save to config file
+        SaveConfig()
+        
+        ; Rebuild tray menu to reflect Work/Home mode changes (needed if enabling/disabling)
+        InitializeTrayMenu()
+        
+        ; Remember the old active hours to check if they changed
         prevStartTime := startTime
         prevEndTime := endTime
           ; Force update if active
@@ -1274,6 +1399,55 @@ OpenSettingsGUI(*) {
       ; Show the GUI and activate it
     settingsGui.Show("AutoSize Center")
     WinActivate("DART Cursor Settings")
+}
+
+; Function to toggle between Work and Home modes
+ToggleWorkHomeMode() {
+    global isWorkMode, currentStation, homeStation, workStation, isActive, workModeEnabled
+    global preferredDirection, homeDirection, workDirection
+    
+    if (!workModeEnabled) {
+        TrayTip("DART Cursor", "Work/Home mode is not enabled. Enable it in Settings.", 3)
+        return
+    }
+    
+    ; Toggle the mode
+    isWorkMode := !isWorkMode
+    
+    ; Update current station and direction based on mode
+    UpdateStationForMode()
+    
+    ; Show notification
+    modeText := isWorkMode ? "WORK" : "HOME"
+    TrayTip("DART Cursor", "Switched to " . modeText . " mode - Station: " . currentStation . " (" . preferredDirection . ")", 2)
+    LogMessage("Switched to " . modeText . " mode - Station: " . currentStation . " (" . preferredDirection . ")")    ; Save the current mode
+    SaveConfig()
+    
+    ; Update tray menu toggle text to show updated toggle option
+    UpdateWorkHomeModeToggle()
+    
+    ; Restart monitoring with new station if active
+    if (isActive) {
+        SetTimer(CheckNow, 0)  ; Stop current timer
+        CheckNow()             ; Check immediately with new station
+        SetTimer(CheckNow, checkFrequency)  ; Restart timer
+    }
+}
+
+; Function to update current station and preferred direction based on Work/Home mode
+UpdateStationForMode() {
+    global workModeEnabled, isWorkMode, currentStation, homeStation, workStation
+    global preferredDirection, homeDirection, workDirection
+    
+    if (workModeEnabled) {
+        if (isWorkMode) {
+            currentStation := workStation
+            preferredDirection := workDirection
+        } else {
+            currentStation := homeStation
+            preferredDirection := homeDirection
+        }
+    }
 }
 
 ; Function to check if configuration is complete
@@ -1359,3 +1533,51 @@ SetTimer(CheckSuspensionStatus, 60000)  ;
 
 ; Initialize the script when it starts
 InitializeScript()
+
+; Function to handle tray menu, also giving the ability to toggle the Work/Home mode from the tray menu
+InitializeTrayMenu() {
+    global workModeEnabled, isWorkMode
+    
+    ; Clear any existing custom menu items first to avoid duplication
+    try A_TrayMenu.Delete("Check Train Times Now")
+    try A_TrayMenu.Delete("Switch to HOME mode")
+    try A_TrayMenu.Delete("Switch to WORK mode")
+    try A_TrayMenu.Delete("Open DART Cursor Settings")
+    try A_TrayMenu.Delete("Restore Default Cursors")
+    
+    ; Add our custom items
+    A_TrayMenu.Insert("1&", "Check Train Times Now", CheckNow)
+    A_TrayMenu.Insert("2&", "") ; Separator
+    
+    ; Add Work/Home mode toggle if enabled
+    if (workModeEnabled) {
+        modeText := "Switch to " . (isWorkMode ? "HOME" : "WORK") . " mode"
+        A_TrayMenu.Insert("3&", modeText, (*) => ToggleWorkHomeMode())
+        A_TrayMenu.Insert("4&", "") ; Separator
+    }
+    
+    ; Add remaining items at the end
+    A_TrayMenu.Insert("", "Open DART Cursor Settings", OpenSettingsGUI)
+    A_TrayMenu.Insert("", "Restore Default Cursors", RestoreDefaultCursors)
+    A_TrayMenu.Insert("", "") ; Separator
+    
+    A_TrayMenu.Default := "Open DART Cursor Settings"
+}
+
+
+UpdateWorkHomeModeToggle() {
+    global workModeEnabled, isWorkMode
+    
+    if (workModeEnabled) {
+        ; Find the current toggle item and update its text
+        oldText := "Switch to " . (isWorkMode ? "WORK" : "HOME") . " mode"
+        newText := "Switch to " . (isWorkMode ? "HOME" : "WORK") . " mode"
+        
+        try {
+            A_TrayMenu.Rename(oldText, newText)
+        } catch {
+            ; If rename fails, the menu might need to be rebuilt (settings changed)
+            InitializeTrayMenu()
+        }
+    }
+}
