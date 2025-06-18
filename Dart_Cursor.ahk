@@ -125,36 +125,7 @@ SortArray(arr) {
             }
         }
     }
-    
-    return sorted
-}
-
-; Helper function to sort an array alphabetically
-SortArray(arr) {
-    ; Create a new sorted array
-    sorted := []
-    
-    ; Copy original array values
-    for index, value in arr {
-        sorted.Push(value)
-    }
-    
-    ; Simple bubble sort
-    n := sorted.Length
-    Loop n {
-        i := A_Index
-        Loop (n - i) {
-            j := A_Index
-            ; Use StrCompare for string comparison instead of > operator
-            if (StrCompare(sorted[j], sorted[j + 1]) > 0) {
-                temp := sorted[j]
-                sorted[j] := sorted[j + 1]
-                sorted[j + 1] := temp
-            }
-        }
-    }
-    
-    return sorted
+      return sorted
 }
 
 ; Function to initialize the script
@@ -1059,7 +1030,8 @@ OpenSettingsGUI(*) {
     tabs.UseTab(1)
     
     ; Station selection
-    settingsGui.AddText("xm+10 y+25 w120", "Your Station:")    ; Create array of station names for the dropdown organized by geographic section
+    settingsGui.AddText("xm+10 y+15 w480 cBlue", "Single Station Selection:")
+    settingsGui.AddText("xm+10 y+10 w120", "Your Station:")    ; Create array of station names for the dropdown organized by geographic section
     global stationNames := []
     
     ; Add a blank entry at the start for visual separation
@@ -1167,11 +1139,21 @@ OpenSettingsGUI(*) {
     
     ; Set directions
     homeDirectionDropdown.Value := (homeDirection = "Southbound") ? 2 : 1
-    workDirectionDropdown.Value := (workDirection = "Southbound") ? 2 : 1
-    
-    ; Current mode display
+    workDirectionDropdown.Value := (workDirection = "Southbound") ? 2 : 1    ; Current mode display and controls
     if (workModeEnabled) {
-        currentModeText := settingsGui.AddText("xm+10 y+15 w480 cRed", "Current Mode: " . (isWorkMode ? "WORK" : "HOME") . " - Use tray menu to switch")
+        currentModeText := settingsGui.AddText("xm+10 y+15 w480 cRed", "Current Mode: " . (isWorkMode ? "WORK" : "HOME") . " - Use tray menu or radio buttons below to switch")
+        
+        ; Radio buttons for mode selection
+        settingsGui.AddText("xm+10 y+15 w480 cBlue", "Active Mode:")
+        homeModeRadio := settingsGui.AddRadio("xm+10 y+5 w100" . (isWorkMode ? "" : " Checked"), "Home Mode")
+        workModeRadio := settingsGui.AddRadio("x+20 yp w100" . (isWorkMode ? " Checked" : ""), "Work Mode")
+        
+        ; Status display
+        statusText := settingsGui.AddText("xm+10 y+10 w480 cGreen", "Current Station: " . currentStation . " (" . preferredDirection . ")")
+        
+        ; Add event handlers for immediate mode switching
+        homeModeRadio.OnEvent("Click", (*) => UpdateModeSelection())
+        workModeRadio.OnEvent("Click", (*) => UpdateModeSelection())
     } else {
         settingsGui.AddText("xm+10 y+15 w480", "Enable Work/Home mode to quickly switch between two preset stations via tray menu.")
     }
@@ -1341,8 +1323,7 @@ OpenSettingsGUI(*) {
         checkFrequency := newCheckFrequency * 1000        ; Schedule times
         startTime := Format("{:02d}{:02d}", startHour, startMin)
         endTime := Format("{:02d}{:02d}", endHour, endMin)
-        
-        ; Work/Home mode settings
+          ; Work/Home mode settings
         workModeEnabled := workModeCheck.Value
         
         ; Get selected stations and directions (only if Work/Home mode is enabled)
@@ -1367,8 +1348,22 @@ OpenSettingsGUI(*) {
             
             ; Get directions - convert dropdown indices to direction strings
             homeDirection := (homeDirectionDropdown.Value = 2) ? "Southbound" : "Northbound"
-            workDirection := (workDirectionDropdown.Value = 2) ? "Southbound" : "Northbound"
-              ; Apply current mode settings to active monitoring variables
+            workDirection := (workDirectionDropdown.Value = 2) ? "Southbound" : "Northbound"            ; Get mode selection from radio buttons
+            try {
+                ; Determine which mode was selected from radio buttons
+                if (workModeRadio.Value) {
+                    isWorkMode := true
+                    LogMessage("Work mode selected via Settings GUI")
+                } else if (homeModeRadio.Value) {
+                    isWorkMode := false
+                    LogMessage("Home mode selected via Settings GUI")
+                }
+            } catch {
+                ; If controls don't exist (shouldn't happen), just continue
+                LogMessage("Could not read mode selection controls")
+            }
+            
+            ; Apply current mode settings to active monitoring variables
             UpdateStationForMode()
         }
           ; Save to config file
@@ -1580,4 +1575,27 @@ UpdateWorkHomeModeToggle() {
             InitializeTrayMenu()
         }
     }
+}
+
+; Function to handle mode activation checkbox
+; Function to handle mode selection radio buttons
+UpdateModeSelection() {
+    global isWorkMode, workModeEnabled, currentStation, preferredDirection, isActive
+    
+    if (!workModeEnabled) {
+        TrayTip("DART Cursor", "Please enable Work/Home mode first.", 3)
+        return
+    }
+    
+    ; Determine mode from the calling context
+    ; We'll update this immediately and save the setting
+    ; The actual radio button values will be read during settings save
+    
+    ; Update station and direction immediately
+    UpdateStationForMode()
+    
+    ; Show notification about the change
+    modeText := isWorkMode ? "WORK" : "HOME" 
+    TrayTip("DART Cursor", "Mode will switch when you click OK. Current selection will be applied.", 1)
+    LogMessage("Mode selection changed in Settings GUI - will be applied on save")
 }

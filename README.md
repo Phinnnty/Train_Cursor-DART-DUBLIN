@@ -5,9 +5,9 @@
 
 Are you tired of looking up the DART times on your phone? Do you get stuck working on a project at work only to realise you wont make your train before it leaves the station?
 
-Never miss your train again! The `DART_Cursor.ahk` script uses the genuine, bonafide, electrified, Irish Rail API to put your train times directly on your screen! 
+Never miss your train again! The `DART_Cursor.ahk` script uses the genuine, bonafide, electri-fied, Irish Rail API to put your train times directly on your screen! 
 
-`DART_Cursor.ahk` is an AutoHotkey v2 script that uses the Irish Rail API to provide visual train arrival notifications.
+The `DART_Cursor.ahk` is an AutoHotkey v2 script that uses the Irish Rail API to provide visual train arrival notifications.
 
 </div>
 
@@ -45,9 +45,14 @@ This script helps Dublin commuters know when to leave their desk to catch their 
    - Choose direction filter (recommended)
    - Set time thresholds for color changes
    - Configure active monitoring hours
-3. **Let it work** - The script monitors during configured hours and changes cursor colors automatically
-4. **Use the tray menu** for quick access to:
+   - **Optional**: Enable Work/Home mode and configure both stations
+3. **Select monitoring mode:**
+   - **Single Station**: The script monitors your selected station during configured hours
+   - **Work/Home Mode**: Use radio buttons to select Home or Work mode, then click OK to apply
+4. **Let it work** - The script monitors during configured hours and changes cursor colors automatically
+5. **Use the tray menu** for quick access to:
    - Instant train time check
+   - Work/Home mode switching (if enabled)
    - Settings adjustment
    - Cursor restoration
 
@@ -56,8 +61,27 @@ This script helps Dublin commuters know when to leave their desk to catch their 
 Configure your preferred station and travel direction:
 - Pick a station a direction! 
 
-#### Enable Work Mode
-- Toggle the API to check on your home station or work station. 
+#### Work/Home Mode
+The script includes a powerful Work/Home mode feature for commuters who travel between two regular stations:
+
+**Setup Process:**
+1. **Enable the Feature**: Check "Enable Work/Home Mode (quick station switching)" to activate the functionality
+2. **Configure Home Station**: Set your home station and direction (typically for evening commute)
+3. **Configure Work Station**: Set your work station and direction (typically for morning commute)
+4. **Select Active Mode**: Use the radio buttons to choose which mode is currently active:
+   - **Home Mode**: Monitors your home station 
+   - **Work Mode**: Monitors your work station
+
+**How to Use:**
+- **Settings Interface**: Use the radio buttons in the Station tab to select Home/Work mode
+- **Tray Menu**: Right-click the system tray icon for instant mode switching
+- **Real-time Display**: Current station and direction are shown based on your selection
+
+**Benefits:**
+- No need to manually change stations when switching between morning/evening commutes
+- Quick toggling between two preset station configurations
+- Remembers your preferred directions for each station
+- Visual confirmation of current active mode and station
 
 ![image](https://github.com/user-attachments/assets/a517f38f-6ec1-4263-8580-978f834ad09f)
 
