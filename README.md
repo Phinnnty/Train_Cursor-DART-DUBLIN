@@ -15,7 +15,7 @@ Never miss your train again! The `DART_Cursor.ahk` script uses the genuine, bona
 
 ## How's It Work?
 
-This script helps Dublin commuters know when to leave their desk to catch their train without constantly checking timetables. Every minute via the [Irish Rail API](https://api.irishrail.ie/realtime/) it provides a visual cue to indicate train arrival times at your train station by changing the colour of your cursor and generating a short lived tooltip with the next train's details. 
+This script helps Dublin commuters know when to leave their desk to catch their train without constantly checking timetables. Users select the timeframe they want the script to work and during that period it gives periodic updates via the [Irish Rail API](https://api.irishrail.ie/realtime/) it provides a visual cue to indicate train arrival times at your train station by changing the colour of your cursor and generating a short lived tooltip with the next train's details. 
 
 ![Dart_Cursor_API_Update](https://github.com/user-attachments/assets/f3ae050a-828a-4461-85b3-474f06cf4064)
 
