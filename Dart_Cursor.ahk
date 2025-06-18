@@ -867,7 +867,7 @@ SetSystemCursors(status) {
     if (status = "green") {
         cursorsFolderPath := A_ScriptDir . "\inrange_cursors\"
         LogMessage("Setting GREEN cursors (plenty of time)")
-    } else if (status = "yellow") {
+    } else if (status = "ffbb00") {
         cursorsFolderPath := A_ScriptDir . "\orange_cursors\"
         LogMessage("Setting ORANGE cursors (leave soon)")
     } else if (status = "red") {
