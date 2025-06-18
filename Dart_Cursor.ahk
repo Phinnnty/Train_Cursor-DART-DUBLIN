@@ -438,7 +438,7 @@ SetStartTime(*) {
         newTime := userInput.Value
         
         ; Check if the format is valid (HH:MM)
-        if (RegExMatch(newTime, "^([01]\d|2[0-3]):([0-5]\d)$")) {
+        if (RegExMatch(newTime, "^([01]\d|2[0-3]):([0-5]\d)$")) { 
             ; Convert from HH:MM to HHMM format for storage
             newTimeFormatted := StrReplace(newTime, ":", "")
             global startTime := newTimeFormatted
@@ -742,23 +742,6 @@ SortByDueTime(trains) {
     return trains
 }
 
-; Function to get cursor color based on time until train arrival
-GetCursorColor(minutesUntilArrival) {
-    global minCatchableTime, yellowThreshold
-    
-    if (minutesUntilArrival <= minCatchableTime) {
-        ; Red - the train is arriving at or below the minimum catchable time
-        return 0xFF0000 ; Red
-    } else if (minutesUntilArrival <= yellowThreshold) {
-        ; Yellow - getting close to minimum time
-        return 0xFFFF00 ; Yellow
-    } else {
-        ; Green - plenty of time
-        return 0x00FF00 ; Green
-    }
-    ; Note: This function is kept for reference but the actual color logic is in UpdateCursor()
-}
-
 ; Function to update the cursor color based on next catchable train
 UpdateCursor() {
     if (trainData.Length = 0) {
@@ -799,11 +782,10 @@ UpdateCursor() {
         if (trainData.Length > currentTrainIndex + 1) {
             SetTimer(MoveToNextTrain, redDisplayTime)
             LogMessage("Red cursor timer set for " . (redDisplayTime/1000) . " seconds")
-        }
-    } else if (nextTrainDue <= yellowThreshold) {
-        ; Yellow - train arriving soon but still catchable
-        cursorStatus := "yellow"
-        LogMessage("Selected train due in " . nextTrainDue . " minutes. Setting YELLOW cursors.")
+        }    } else if (nextTrainDue <= yellowThreshold) {
+        ; Orange - train arriving soon but still catchable
+        cursorStatus := "orange"  ; For trains arriving within yellow threshold
+        LogMessage("Selected train due in " . nextTrainDue . " minutes. Setting ORANGE cursors.")
         
         ; Clear any red timer if it exists
         SetTimer(MoveToNextTrain, 0)
@@ -887,12 +869,11 @@ SetSystemCursors(status) {
     }
     
     ; Save the new status
-    currentCursorStatus := status
-      ; Determine which folder to use based on status
+    currentCursorStatus := status      ; Determine which folder to use based on status
     if (status = "green") {
         cursorsFolderPath := A_ScriptDir . "\inrange_cursors\"
         LogMessage("Setting GREEN cursors (plenty of time)")
-    } else if (status = "ffbb00") {
+    } else if (status = "orange") {  ; Use orange_cursors folder
         cursorsFolderPath := A_ScriptDir . "\orange_cursors\"
         LogMessage("Setting ORANGE cursors (leave soon)")
     } else if (status = "red") {
