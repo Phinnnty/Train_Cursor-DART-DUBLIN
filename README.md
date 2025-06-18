@@ -16,7 +16,7 @@ This script helps Dublin commuters know when to leave their desk to catch their 
 
 The script updates every minute via the [Irish Rail API](https://api.irishrail.ie/realtime/) and shows a tooltip with current station info and next train details:
 
-![image](https://github.com/user-attachments/assets/9e8eada8-5808-4904-868a-39e0dd0a0645)
+![Dart_Cursor_API_Update](https://github.com/user-attachments/assets/f3ae050a-828a-4461-85b3-474f06cf4064)
 
 *Note: The cursor only changes during your configured active hours, so you're not always looking at a colored cursor.*
 
