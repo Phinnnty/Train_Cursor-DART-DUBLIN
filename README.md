@@ -4,7 +4,17 @@ An AutoHotkey v2 script that uses the Dublin Area Rapid Transit API to make user
 
 ## Purpose
 
-This script lets folks at Murex Dublin Office know when they need to leave their desk to catch their train without constantly checking the timetable. It provides a visual cue by changing the cursor color, so it's always in view while working. 
+This script lets folks in Dublin know when they need to leave their desk to catch their train without constantly checking the timetable. It provides a visual cue by changing the cursor color, so it's always in view while working. 
+
+Green - ![image](https://github.com/user-attachments/assets/0d4e52aa-705a-4e59-afb6-5bd1fe9648c8)
+
+Yellow - ![image](https://github.com/user-attachments/assets/a47af124-a86a-40e4-8962-9e6e27298c1c)
+
+Red - ![image](https://github.com/user-attachments/assets/49026965-10dc-441a-bb4d-0547756dae46)
+
+Every minute the API updates and presents a tooltip that gives information on the current train station and the next train in your direction 
+
+![image](https://github.com/user-attachments/assets/9e8eada8-5808-4904-868a-39e0dd0a0645)
 
 The script runs in the background, but the mouse cursor only changes during the active winwdow for checking Dart times so you're not always looking at a technicolour mouse. 
 
