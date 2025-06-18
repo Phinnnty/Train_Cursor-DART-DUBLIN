@@ -1,7 +1,7 @@
 # DART Cursor Notifier
 
 <div align="left">
-<img src="https://github.com/user-attachments/assets/70ecc62a-2056-403d-8a0a-ebeb2d82e827" alt="Lyle Lanley" width="150" align="right" style="margin-left: 20px; margin-bottom: 20px;"/>
+<img src="https://github.com/user-attachments/assets/70ecc62a-2056-403d-8a0a-ebeb2d82e827" alt="Lyle Lanley" width="170" align="right" style="margin-left: 40px; margin-bottom: 40px;"/>
 
 Are you tired of looking up the DART times on your phone? Do you get stuck working on a project at work only to realise you wont make your train before it leaves the station?
 
@@ -9,9 +9,9 @@ Never miss your train again! The `DART_Cursor.ahk` script uses the genuine, bona
 
 `DART_Cursor.ahk` is an AutoHotkey v2 script that uses the Irish Rail API to provide visual train arrival notifications by changing your cursor color. 
 
-*Inspired by [ivan-the-terrible's bloodsugar-cursor](https://github.com/ivan-the-terrible/bloodsugar-cursor) using the same methods and cursor library.*
-
 </div>
+
+*Inspired by [ivan-the-terrible's bloodsugar-cursor](https://github.com/ivan-the-terrible/bloodsugar-cursor) using the same methods and cursor library.*
 
 ## How It Works
 
