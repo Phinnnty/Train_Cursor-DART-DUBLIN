@@ -83,8 +83,7 @@ The script includes a powerful Work/Home mode feature for commuters who travel b
 - Remembers your preferred directions for each station
 - Visual confirmation of current active mode and station
 
-![image](https://github.com/user-attachments/assets/a517f38f-6ec1-4263-8580-978f834ad09f)
-
+![image](https://github.com/user-attachments/assets/74c64ff2-a53d-46e7-b90d-282b9567a2f4)
 
 ### Timing Thresholds
 Set when cursor colors change based on train arrival times:
@@ -95,13 +94,13 @@ Set when cursor colors change based on train arrival times:
    - ****Red Display Time**** indicates how long to show the red cursor before moving on to the next train headed your direction!
    - ****API Check Freqeuncy**** indicates how often we call the Irish Rail API and update the cursor. 
 
-![image](https://github.com/user-attachments/assets/b4468069-9a2a-408c-9996-a61b7889d3e4)
+![image](https://github.com/user-attachments/assets/2dbf52d2-0580-481b-8bce-c9af2eca01f6)
 
 ### Active Schedule
 Define when the script monitors train times:
 > ***Note***: The cursor only changes during your configured active hours, so you're not always looking at a colored cursor.*
 
-![image](https://github.com/user-attachments/assets/b49da87b-8e66-42ca-a8b1-fb638bc1d5d9)
+![image](https://github.com/user-attachments/assets/92ea8886-25b0-423c-9975-b5595b751659)
 
 ## Installation
 
