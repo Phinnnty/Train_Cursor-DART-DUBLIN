@@ -63,11 +63,12 @@ Configure your preferred station and travel direction:
 Set when cursor colors change based on train arrival times:
 - This is entirely customisable by the user.
 - Set the thresholds to suit you!
-   - Minimum Catchable Time indicates the latest you think you can leave (if a train arrives in less time that this, the cursor turns red)
-   - Yellow Warning Threshold indicates if you leave now you'll arrive just before your train does.
-   - Red Display Time indicates how long to show the red cursor before moving on to the next train headed your direction! 
+   - ****Minimum Catchable Time**** indicates the latest you think you can leave (if a train arrives in less time that this, the cursor turns red)
+   - ****Yellow Warning Threshold**** indicates if you leave now you'll arrive just before your train does.
+   - ****Red Display Time**** indicates how long to show the red cursor before moving on to the next train headed your direction!
+   - ****API Check Freqeuncy**** indicates how often we call the Irish Rail API and update the cursor. 
 
-![image](https://github.com/user-attachments/assets/4072a7a4-7d95-4e64-b578-b3306b4aab5e)
+![image](https://github.com/user-attachments/assets/b4468069-9a2a-408c-9996-a61b7889d3e4)
 
 ### Active Schedule
 Define when the script monitors train times:
