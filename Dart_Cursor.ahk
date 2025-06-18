@@ -125,7 +125,7 @@ SortArray(arr) {
 ; Function to initialize the script
 InitializeScript() {
     global configFile, logFile, preferredDirection, currentStation, minCatchableTime
-    global yellowThreshold, redDisplayTime, startTime, endTime, isActive
+    global yellowThreshold, redDisplayTime, startTime, endTime, isActive, checkFrequency
     
     ; Create or clear log file safely
     if (FileExist(logFile)) {
@@ -154,8 +154,7 @@ InitializeScript() {
     
     ; Check if this is the first run by looking for configuration file
     isFirstRun := !FileExist(configFile)
-    
-    ; Load the configuration if it exists
+      ; Load the configuration if it exists
     if (FileExist(configFile)) {
         preferredDirection := IniRead(configFile, "Settings", "Direction", "")
         currentStation := IniRead(configFile, "Settings", "Station", "Lansdowne Road")
@@ -165,12 +164,12 @@ InitializeScript() {
         minCatchableTime := Integer(IniRead(configFile, "Settings", "MinCatchableTime", "5"))
         yellowThreshold := Integer(IniRead(configFile, "Settings", "YellowThreshold", "5"))
         redDisplayTime := Integer(IniRead(configFile, "Settings", "RedDisplayTime", "60")) * 1000
+        checkFrequency := Integer(IniRead(configFile, "Settings", "CheckFrequency", "60")) * 1000
         
         ; Load start and end times
         startTime := IniRead(configFile, "Settings", "StartTime", "1710")
         endTime := IniRead(configFile, "Settings", "EndTime", "1745")
-        
-        LogMessage("Loaded time thresholds - Min catchable: " . minCatchableTime . ", Yellow threshold: " . yellowThreshold . ", Red display time: " . (redDisplayTime/1000) . "s")
+          LogMessage("Loaded time thresholds - Min catchable: " . minCatchableTime . ", Yellow threshold: " . yellowThreshold . ", Red display time: " . (redDisplayTime/1000) . "s, Check frequency: " . (checkFrequency/1000) . "s")
         LogMessage("Loaded operational times - Start: " . FormatHHMM(startTime) . ", End: " . FormatHHMM(endTime))
           ; Check if configuration is missing any essential values
         if (!IsConfigurationComplete()) {
@@ -229,12 +228,13 @@ FormatHHMM(timeString) {
 
 ; Function to save configuration to a file
 SaveConfig() {
-    global preferredDirection, currentStation, minCatchableTime, yellowThreshold, redDisplayTime, startTime, endTime
+    global preferredDirection, currentStation, minCatchableTime, yellowThreshold, redDisplayTime, startTime, endTime, checkFrequency
     IniWrite(preferredDirection, configFile, "Settings", "Direction")
     IniWrite(currentStation, configFile, "Settings", "Station")
     IniWrite(minCatchableTime, configFile, "Settings", "MinCatchableTime")
     IniWrite(yellowThreshold, configFile, "Settings", "YellowThreshold")
     IniWrite(redDisplayTime/1000, configFile, "Settings", "RedDisplayTime") ; Store in seconds
+    IniWrite(checkFrequency/1000, configFile, "Settings", "CheckFrequency") ; Store in seconds
     IniWrite(startTime, configFile, "Settings", "StartTime")
     IniWrite(endTime, configFile, "Settings", "EndTime")
 }
@@ -1105,12 +1105,17 @@ OpenSettingsGUI(*) {
     settingsGui.AddText("xm+10 y+5 w480", "• Train due in > " . yellowThreshold . " minutes: GREEN cursor (plenty of time)")
     settingsGui.AddText("xm+10 y+5 w480", "• Train due in " . minCatchableTime . "-" . yellowThreshold . " minutes: YELLOW cursor (leave soon)")
     settingsGui.AddText("xm+10 y+5 w480", "• Train due in < " . minCatchableTime . " minutes: RED cursor (won't make it)")
-    
-    ; Red display time
+      ; Red display time
     settingsGui.AddText("xm+10 y+20 w170", "Red Display Time:")
     redDisplayEdit := settingsGui.AddEdit("w80 x+10 yp-3 Number", redDisplayTime/1000)
     settingsGui.AddText("x+10 yp+3 w200", "seconds")
     settingsGui.AddText("xm+10 y+3 w450", "How long to show red cursor before moving to next train")
+      ; API Check Frequency
+    settingsGui.AddText("xm+10 y+20 w170", "API Check Frequency:")
+    checkFrequencyEdit := settingsGui.AddEdit("w80 x+10 yp-3 Number", checkFrequency/1000)
+    settingsGui.AddText("x+10 yp+3 w200", "seconds")
+    settingsGui.AddText("xm+10 y+3 w450", "How often to check for new train data from the DART API (10-600 seconds)")
+    settingsGui.AddText("xm+10 y+5 w450", "Lower values = more responsive updates, Higher values = less network usage")
     
     ; ======= Schedule Tab =========
     tabs.UseTab(3)
@@ -1168,14 +1173,14 @@ OpenSettingsGUI(*) {
     ; Set event handlers for buttons
     saveButton.OnEvent("Click", (*) => SaveSettingsFunction())
     cancelButton.OnEvent("Click", (*) => (TrayTip("DART Cursor", "Settings not saved", 3), settingsGui.Destroy()))
-    
-    ; Save settings function - separated from event handler
+      ; Save settings function - separated from event handler
     SaveSettingsFunction() {
+        ; Access global variables that will be modified
+        global stationNames, currentStation, preferredDirection, minCatchableTime
+        global yellowThreshold, redDisplayTime, checkFrequency, startTime, endTime, isActive
+        
         ; Validate inputs
         validationError := ""
-        
-        ; Access stationNames which should have been created in OpenSettingsGUI
-        global stationNames
           ; Get values from GUI
         selectedStationIndex := stationDropdown.Value
         if (!selectedStationIndex)
@@ -1203,10 +1208,13 @@ OpenSettingsGUI(*) {
         newYellowThreshold := Integer(yellowEdit.Value)
         if (newYellowThreshold <= newMinCatchable || newYellowThreshold > 30)
             validationError .= "• Yellow threshold must be greater than minimum catchable time and no more than 30 minutes.`n"
-            
-        newRedDisplay := Integer(redDisplayEdit.Value)
+              newRedDisplay := Integer(redDisplayEdit.Value)
         if (newRedDisplay < 10 || newRedDisplay > 300)
             validationError .= "• Red display time must be between 10 and 300 seconds.`n"
+            
+        newCheckFrequency := Integer(checkFrequencyEdit.Value)
+        if (newCheckFrequency < 10 || newCheckFrequency > 600)
+            validationError .= "• API check frequency must be between 10 and 600 seconds.`n"
             
         ; Validate time formats
         startHour := Integer(startHourEdit.Value)
@@ -1233,12 +1241,11 @@ OpenSettingsGUI(*) {
         currentStation := stations[selectedStationName]
         
         ; Direction
-        preferredDirection := newDirection
-        
-        ; Time thresholds
+        preferredDirection := newDirection        ; Time thresholds
         minCatchableTime := newMinCatchable
         yellowThreshold := newYellowThreshold
         redDisplayTime := newRedDisplay * 1000
+        checkFrequency := newCheckFrequency * 1000
         
         ; Schedule times
         startTime := Format("{:02d}{:02d}", startHour, startMin)
@@ -1248,11 +1255,13 @@ OpenSettingsGUI(*) {
         SaveConfig()        ; Remember the old active hours to check if they changed
         prevStartTime := startTime
         prevEndTime := endTime
-        
-        ; Force update if active
-        if (isActive)
-            CheckNow()
-        else {
+          ; Force update if active
+        if (isActive) {
+            ; Restart the timer with the new frequency
+            SetTimer(CheckNow, 0)  ; Stop current timer
+            CheckNow()             ; Check immediately
+            SetTimer(CheckNow, checkFrequency)  ; Restart with new frequency
+        } else {
             ; We need to ensure cursors are restored if inactive
             CheckStartTime()  ; Check if we need to start monitoring now
             EnsureCursorsRestored()  ; Make sure cursors are restored if we're inactive
