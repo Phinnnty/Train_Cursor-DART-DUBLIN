@@ -31,7 +31,7 @@ The script updates every minute via the [Irish Rail API](https://api.irishrail.i
 
 ## Key Features
 
-- **Smart Station Selection**: Choose any DART station in Dublin through an organized GUI (Northern, City Centre, Southern sections)
+- **Station Selection**: Choose any DART station in Dublin through an organized GUI (Northern, City Centre, Southern sections)
 - **Direction Filtering**: Filter for northbound/southbound trains (recommended as otherwise you'll see every train in either direction)
 - **Flexible Scheduling**: Set specific active hours (e.g., 17:10-18:00) for automatic operation
 - **Real-time Updates**: Minute-by-minute API calls for current train data
